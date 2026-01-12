@@ -13,60 +13,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check-build-and-test-required:
-    name: Check if build and test are required
-    runs-on: ubuntu-latest
-    outputs:
-      code: ${{ steps.filter.outputs.code }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Check changed files
-        uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          predicate-quantifier: "every"
-          filters: |
-            docs:
-              - '**/*.md'
-              - 'docs/**'
-            code:
-              - '**'
-              - '!**/*.md'
-              - '!docs/**'
-
-  code-coverage-report:
-    name: Code Coverage Report
-    runs-on: ubuntu-latest
-    needs: [ validate-and-test, check-build-and-test-required ]
-    if: needs.check-build-and-test-required.outputs.code == 'true'
-    steps:
-      - uses: fgrosse/go-coverage-report@8c1d1a09864211d258937b1b1a5b849f7e4f2682
-        id: coverage_reporter
-        with:
-          coverage-artifact-name: "code-coverage"
-          coverage-file-name: "coverage.out"
-          root-package: "github.com/NVIDIA/KAI-scheduler"
-          github-baseline-workflow-ref: update-coverage-badge.yaml
-          skip-comment: true
-      - name: Save coverage report to file
-        env:
-          REPORT_BODY: ${{ steps.coverage_reporter.outputs.coverage_report }}
-        run: echo "$REPORT_BODY" > coverage-report.txt
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report-for-comment
-          path: coverage-report.txt
-      - name: Save PR number
-        run: echo "${{ github.event.number }}" > pr_number.txt
-      - name: Upload PR number
-        uses: actions/upload-artifact@v4
-        with:
-          name: pr-number-for-comment
-          path: pr_number.txt
-
   sleep-10:
     name: Sleep 10 seconds
     runs-on: ubuntu-latest
